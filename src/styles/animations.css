@@ -1,0 +1,8 @@
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.login-message {
+  animation: fadeIn 0.3s;
+}
