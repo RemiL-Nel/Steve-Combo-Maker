@@ -76,6 +76,11 @@ function App() {
                   <PublishedCombos />
                 </ErrorBoundary>
               } />
+              <Route path="/combo/:id" element={
+                <ErrorBoundary>
+                  <Arena sharedComboId={window.location.pathname.split('/').pop()} />
+                </ErrorBoundary>
+              } />
               <Route
                 path="/profile"
                 element={

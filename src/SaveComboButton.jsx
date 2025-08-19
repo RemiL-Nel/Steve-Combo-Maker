@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { saveCombo } from './firebase';
 import { useAuth } from './contexts/AuthContext';
@@ -14,6 +14,8 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [savedComboId, setSavedComboId] = useState(null);
+  const nameInputRef = useRef(null);
+  const solutionInputRef = useRef(null);
 
   const handleSave = async () => {
     if (!currentUser) {
@@ -173,9 +175,15 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
                 Combo Name *
               </label>
               <input
+                ref={nameInputRef}
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  // Maintain focus after state update
+                  setTimeout(() => nameInputRef.current.focus(), 0);
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
                 placeholder="My Awesome Combo"
                 style={{
                   width: '100%',
@@ -198,11 +206,17 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
               }}>
                 Solution of the Combo
               </label>
-              <textarea
+              <input
+                ref={solutionInputRef}
+                type="text"
                 value={solution}
-                onChange={(e) => setSolution(e.target.value)}
+                onChange={(e) => {
+                  setSolution(e.target.value);
+                  // Maintain focus after state update
+                  setTimeout(() => solutionInputRef.current.focus(), 0);
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
                 placeholder="e.g. Up Tilt, Nil 1, Up Tilt, Nil 2, Up Smash"
-                rows="3"
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -210,6 +224,7 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
                   border: '1px solid #444',
                   backgroundColor: '#1e1e1e',
                   color: 'white',
+                  fontSize: '16px',
                   fontSize: '16px',
                   resize: 'vertical',
                 }}

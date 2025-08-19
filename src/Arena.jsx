@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Steve from './Steve.jsx';
 import Lucina from './Lucina.jsx';
 import RandomizeButton from './RandomizeButton.jsx';
@@ -29,6 +29,31 @@ const Arena = () => {
   });
   const [randomized, setRandomized] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
+  
+  // Memoize combo data to prevent unnecessary re-renders
+  const comboData = useMemo(() => ({
+    percentage: settings.percentage,
+    gold: settings.gold,
+    startingMove: settings.startingMove,
+    di: settings.di,
+    sdi: settings.sdi,
+    sdiStrength: settings.sdiStrength,
+    positions,
+    difficulty: 5,
+  }), [
+    settings.percentage, 
+    settings.gold, 
+    settings.startingMove, 
+    settings.di, 
+    settings.sdi, 
+    settings.sdiStrength,
+    positions
+  ]);
+
+  // Memoize save handler
+  const handleSave = useCallback(() => {
+    console.log('Combo saved successfully!');
+  }, []);
 
   
   
@@ -455,20 +480,9 @@ const Arena = () => {
         {randomized && (
           <>
             <SaveComboButton 
-              comboData={{
-                percentage: settings.percentage,
-                gold: settings.gold,
-                startingMove: settings.startingMove,
-                di: settings.di,
-                sdi: settings.sdi,
-                sdiStrength: settings.sdiStrength,
-                positions,
-                difficulty: 5, // Default difficulty, can be updated by the user
-              }}
+              comboData={comboData}
               getPreview={getPreview}
-              onSave={() => {
-                console.log('Combo saved successfully!');
-              }}
+              onSave={handleSave}
             />
             <ShareButton onShare={handleShare} />
           </>
