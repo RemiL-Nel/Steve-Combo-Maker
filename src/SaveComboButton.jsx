@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { saveCombo } from './firebase';
 import { useAuth } from './contexts/AuthContext';
 import './styles/animations.css';
@@ -72,9 +73,16 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
     }
   };
 
+  // Use React Portal to render the modal outside of the component's DOM hierarchy
+  const ModalPortal = ({ children }) => {
+    return typeof document !== 'undefined' 
+      ? ReactDOM.createPortal(children, document.body)
+      : null;
+  };
+
   return (
     <>
-      <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div style={{ display: 'inline-block' }}>
         <button
           onClick={() => currentUser ? setIsModalOpen(true) : setShowLoginMessage(true)}
           style={{
@@ -122,26 +130,37 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
       </div>
 
       {isModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-        }}>
+        <ModalPortal>
           <div style={{
-            backgroundColor: '#2d2d2d',
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
             padding: '20px',
-            borderRadius: '10px',
-            width: '90%',
-            maxWidth: '500px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            boxSizing: 'border-box'
           }}>
+            <div style={{
+              backgroundColor: '#2d2d2d',
+              padding: '25px',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '500px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+              position: 'relative',
+              zIndex: 10000,
+              transform: 'translateZ(0)',
+              WebkitOverflowScrolling: 'touch',
+              boxSizing: 'border-box'
+            }}>
+              <div>
             <h2 style={{ color: 'white', marginBottom: '20px' }}>Save Your Combo</h2>
             
             <div style={{ marginBottom: '15px' }}>
@@ -213,17 +232,27 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
                     onClick={() => setDifficulty(i + 1)}
                     style={{
                       color: i < difficulty ? '#FFD700' : '#666',
-                      fontSize: '22px',
+                      fontSize: 'clamp(16px, 4vw, 22px)',
                       cursor: 'pointer',
                       textShadow: i < difficulty ? '0 0 5px rgba(255, 215, 0, 0.7)' : 'none',
                       transition: 'transform 0.15s ease',
+                      '@media (min-width: 480px)': {
+                        fontSize: '22px',
+                      },
                     }}
                     title={`${i + 1}`}
                   >
                     {i < difficulty ? '★' : '☆'}
                   </span>
                 ))}
-                <span style={{ color: '#FFD700', fontWeight: 'bold', marginLeft: 6 }}>{difficulty}/10</span>
+                <span style={{ 
+                  color: '#FFD700', 
+                  fontWeight: 'bold', 
+                  marginLeft: 6,
+                  fontSize: 'clamp(14px, 3.5vw, 18px)'
+                }}>
+                  {difficulty}/10
+                </span>
               </div>
               <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
                 Click stars to set difficulty
@@ -284,8 +313,10 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
               </div>
             </div>
             
+              </div>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </>
   );

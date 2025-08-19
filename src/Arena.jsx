@@ -6,6 +6,7 @@ import ShareButton from './ShareButton.jsx';
 import SaveComboButton from './SaveComboButton';
 import html2canvas from 'html2canvas';
 import TwitterIcon from '@mui/icons-material/Twitter';
+import styles from './Arena.module.css';
 
 const Arena = () => {
   const arenaImage = require('./assets/arena.jpg');
@@ -233,9 +234,9 @@ const Arena = () => {
       return;
     }
     
-    // Randomize positions but keep fighters close together
-    // Pick a center between 40% and 60% and a small separation of 3% to 8%
-    const centerX = 40 + Math.random() * 20; // 40-60
+    // Randomize positions with wider range
+    // Pick a center between 20% and 80% and a small separation of 3% to 8%
+    const centerX = 20 + Math.random() * 60; // 20-80
     const separation = 3 + Math.random() * 5; // 3-8
     let nextSteveX = centerX - separation / 2;
     let nextLucinaX = centerX + separation / 2;
@@ -335,13 +336,40 @@ const Arena = () => {
       
       <div ref={previewAreaRef} style={{ position: 'relative', width: '100%', maxWidth: '900px' }}>
         
-        <img
-          ref={arenaRef}
-          src={arenaImage}
-          onLoad={updateBottomOffset}
-          alt="Arena"
-          style={{ width: '100%', height: 'auto', display: 'block' }}
-        />
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+          border: '6px solid #2a2a2a',
+          '&:before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            border: '2px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '4px',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }
+        }}>
+          <img
+            ref={arenaRef}
+            src={arenaImage}
+            onLoad={updateBottomOffset}
+            alt="Arena"
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block',
+              position: 'relative',
+              zIndex: 0,
+            }}
+          />
+        </div>
 
         <div style={{ position: 'relative' }}>
           {/* Steve */}
@@ -379,12 +407,46 @@ const Arena = () => {
       </div>
 
       <div style={{ 
+        position: 'fixed',
+        bottom: '50px',
+        left: '0',
+        right: '0',
         display: 'flex', 
-        gap: '15px', 
-        marginTop: '15px',
+        gap: '10px', 
+        padding: '10px',
         flexWrap: 'wrap',
         justifyContent: 'center',
         alignItems: 'center',
+        width: '100%',
+        backgroundColor: 'rgba(36, 36, 36, 0.8)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 100,
+        '@media (max-width: 600px)': {
+          padding: '8px',
+          gap: '6px',
+          '& > *': {
+            flex: '1 1 30%',
+            minWidth: '90px',
+            maxWidth: '120px',
+            '& .MuiButton-root': {
+              fontSize: '0.7rem',
+              padding: '6px 4px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }
+          }
+        },
+        '@media (max-width: 400px)': {
+          '& > *': {
+            flex: '1 1 45%',
+            minWidth: '80px',
+            '& .MuiButton-root': {
+              fontSize: '0.65rem',
+              padding: '4px 2px'
+            }
+          }
+        }
       }}>
         <RandomizeButton 
           onRandomize={randomizeAll} 
@@ -414,77 +476,108 @@ const Arena = () => {
       </div>
       
       {/* Display current settings */}
-      <div style={{ 
-        position: 'fixed',
-        left: '20px',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        color: 'white', 
-        textAlign: 'left',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        padding: '20px',
-        borderRadius: '10px',
-        maxWidth: '300px',
-        zIndex: 10,
-      }}>
-        <p style={{ fontSize: '1.2rem', margin: '10px 0' }}>Percentage: <strong>{settings.percentage}%</strong></p>
-        <p style={{ fontSize: '1.2rem', margin: '10px 0' }}>Gold: <strong>{settings.gold ? 'Yes' : 'No'}</strong></p>
-        <p style={{ fontSize: '1.2rem', margin: '10px 0' }}>DI: <strong>{settings.di}</strong></p>
-        <p style={{ fontSize: '1.2rem', margin: '10px 0' }}>SDI: <strong>{settings.sdi}</strong></p>
-        <p style={{ fontSize: '1.2rem', margin: '10px 0' }}>SDI Strength: <strong>{settings.sdiStrength}</strong></p>
-        <p style={{ fontSize: '1.2rem', margin: '10px 0' }}>Tool: <strong>{settings.tool}</strong></p>
+      <div className={styles.settingsPanel}>
+        <div className={styles.settingsGrid}>
+          <div className={styles.column}>
+            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Percents: <strong>{settings.percentage}%</strong></p>
+            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Gold: <strong>{settings.gold ? 'Yes' : 'No'}</strong></p>
+            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>DI: <strong>{settings.di}</strong></p>
+          </div>
+          <div className={styles.column}>
+            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>SDI: <strong>{settings.sdi}</strong></p>
+            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>SDI Strength: <strong>{settings.sdiStrength}</strong></p>
+            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Tool: <strong>{settings.tool}</strong></p>
+          </div>
+        </div>
         <p style={{ 
-          fontSize: '1.4rem', 
-          margin: '15px 0 5px',
+          fontSize: 'clamp(1rem, 5vw, 1.4rem)', 
+          margin: '10px 0 5px',
           color: '#4CAF50',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          textAlign: 'center',
+          width: '100%'
         }}>
           Starting Move:
         </p>
         <p style={{ 
-          fontSize: '1.8rem',
+          fontSize: 'clamp(1.2rem, 6vw, 1.8rem)',
           margin: '5px 0',
           color: '#FFD700',
           fontWeight: 'bold',
-          textShadow: '0 0 5px rgba(0,0,0,0.5)'
+          textShadow: '0 0 5px rgba(0,0,0,0.5)',
+          textAlign: 'center',
+          width: '100%'
         }}>
           {settings.startingMove}
         </p>
       </div>
       
-      {/* Feedback Link */}
-      <a 
-        href="https://twitter.com/messages/compose?recipient_id=moicnelou" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        style={{
-          position: 'fixed',
-          left: '20px',
-          bottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          color: '#1DA1F2',
-          textDecoration: 'none',
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          padding: '8px 16px',
-          borderRadius: '20px',
-          fontSize: '0.9rem',
-          transition: 'all 0.3s ease',
-          zIndex: 1000,
-          border: '1px solid rgba(29, 161, 242, 0.3)'
-        }}
-        onMouseOver={e => {
-          e.currentTarget.style.backgroundColor = 'rgba(29, 161, 242, 0.1)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }}
-        onMouseOut={e => {
-          e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }}
-      >
-        <TwitterIcon sx={{ mr: 1 }} />
-        Give me feedback!
-      </a>
+      {/* Footer */}
+      <footer style={{
+        position: 'fixed',
+        bottom: '0',
+        left: '0',
+        right: '0',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px 20px',
+        zIndex: 1000,
+      }}>
+        <a 
+          href="https://twitter.com/messages/compose?recipient_id=moicnelou" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            color: '#1DA1F2',
+            textDecoration: 'none',
+            padding: '6px 12px',
+            borderRadius: '15px',
+            fontSize: '0.85rem',
+            transition: 'all 0.2s ease',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            border: '1px solid rgba(29, 161, 242, 0.2)'
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.backgroundColor = 'rgba(29, 161, 242, 0.1)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          Give me feedback!
+        </a>
+        
+        <a 
+          href="https://twitter.com/moicnelou" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{
+            color: '#888',
+            textDecoration: 'none',
+            fontSize: '0.8rem',
+            fontFamily: 'Arial, sans-serif',
+            transition: 'color 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.color = '#1DA1F2';
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.color = '#888';
+          }}
+        >
+          <span>made by</span>
+          <span style={{ fontWeight: 'bold', color: '#fff' }}>moicnelou</span>
+          <TwitterIcon style={{ fontSize: '1rem', marginLeft: '3px' }} />
+        </a>
+      </footer>
     </div>
   );
 };

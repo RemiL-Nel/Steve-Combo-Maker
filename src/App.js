@@ -12,6 +12,8 @@ import ForgotPassword from './components/auth/ForgotPassword';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import PublishedCombos from './PublishedCombos';
+import { useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import './App.css';
 
 // Lazy load the Arena component to improve initial load time
@@ -29,6 +31,28 @@ const theme = createTheme({
   },
 });
 
+// Component to handle body scrolling based on route
+const ScrollHandler = ({ children }) => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === '/') {
+      // Disable scrolling on home page
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Enable scrolling on other pages
+      document.body.style.overflow = 'auto';
+    }
+
+    // Cleanup function to reset overflow when component unmounts
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [location.pathname]);
+
+  return children;
+};
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -37,6 +61,7 @@ function App() {
         <AuthProvider>
           <Navigation />
           <Suspense fallback={<LoadingSpinner />}>
+            <ScrollHandler>
             <Routes>
               <Route path="/" element={
                   <ErrorBoundary>
@@ -61,6 +86,7 @@ function App() {
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </ScrollHandler>
           </Suspense>
         </AuthProvider>
       </Router>

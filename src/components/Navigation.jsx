@@ -45,27 +45,61 @@ const Navigation = () => {
     <AppBar position="static">
       <Toolbar>
         <Typography 
-          variant="h6" 
+          variant="subtitle1"
           component={RouterLink}
           to="/"
           sx={{ 
             flexGrow: 1,
+            paddingRight: '10px',
+            fontSize: '0.5rem',
             fontFamily: '"Press Start 2P", monospace',
+            borderRight: '1px solid rgba(255, 255, 255, 0.3)',
             letterSpacing: '1px',
             color: 'inherit',
             textDecoration: 'none',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            '@media (min-width: 600px)': {
+              fontSize: '0.9rem'
+            }
           }}
         >
           Steve Combo Maker
         </Typography>
         
         {currentUser ? (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Button color="inherit" component={RouterLink} to="/published">
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            '& > *:not(:last-child)': {
+              borderRight: '1px solid rgba(255, 255, 255, 0.3)',
+              '&:hover': {
+                borderRight: '1px solid rgba(255, 255, 255, 0.3)'
+              }
+            }
+          }}>
+            <Button 
+              color="inherit" 
+              component={RouterLink} 
+              to="/published"
+              sx={{ 
+                fontSize: '0.8rem',
+                pr: 2,
+                mr: 1
+              }}
+            >
               Browse Combos
             </Button>
-            <Button color="inherit" component={RouterLink} to="/profile">
+            <Button 
+              color="inherit" 
+              component={RouterLink} 
+              to="/profile"
+              sx={{ 
+                fontSize: '0.8rem',
+                pl: 2,
+                pr: 2,
+                mr: 1
+              }}
+            >
               Profile
             </Button>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>

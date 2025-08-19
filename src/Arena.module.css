@@ -1,0 +1,95 @@
+.settingsPanel {
+    position: fixed;
+    top: 300px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    z-index: 10;
+    width: auto;
+    max-width: 360px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Settings Grid Layout */
+.settingsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 20px;
+    width: 100%;
+    position: relative;
+}
+
+.settingsGrid::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 5px;
+    bottom: 5px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-10px);
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 5px 0;
+}
+
+/* Tablet and Mobile */
+@media (max-width: 1024px) {
+    .settingsPanel {
+        position: fixed;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: auto;
+        max-width: 320px;
+        margin: 0 auto;
+        padding: 12px 18px;
+        text-align: left;
+        font-size: 1rem;
+    }
+
+    .settingsPanel p {
+        margin: 3px 0;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .settingsPanel strong {
+        font-size: 0.9rem;
+        margin-left: 10px;
+    }
+}
+
+/* Mobile specific */
+@media (max-width: 480px) {
+    .settingsPanel {
+        max-width: 280px;
+        font-size: 0.9rem;
+        padding: 10px 14px;
+        top: 100px;
+    }
+    
+    .settingsPanel p {
+        font-size: 0.8rem;
+    }
+
+    .settingsPanel p {
+        font-size: 0.75rem;
+    }
+
+    .settingsPanel strong {
+        font-size: 0.85rem;
+    }
+}
