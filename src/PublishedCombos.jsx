@@ -175,8 +175,11 @@ const PublishedCombos = () => {
               gold: data.gold || false,
               di: data.di || 'No DI',
               sdi: data.sdi || 'No SDI',
-              sdiStrength: data.sdiStrength || '0'
+              sdiStrength: data.sdiStrength || '0',
+              solution: data.solution || ''
             },
+            // Also include solution at the root for backward compatibility
+            solution: data.solution || '',
             // keep raw timestamp for sorting
             _publishedAtRaw: data.publishedAt ?? null,
             publishedAt: data.publishedAt?.toDate ? data.publishedAt.toDate().toLocaleDateString() : 'Unknown date'
@@ -596,6 +599,25 @@ const PublishedCombos = () => {
               
               {/* Combo Preview */}
               <div style={styles.previewContainer}>
+                {combo.solution && (
+                  <div style={{
+                    padding: '10px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    borderRadius: '4px',
+                    marginBottom: '10px'
+                  }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Solution:</div>
+                    <div style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      fontStyle: 'italic',
+                      fontSize: '0.9em'
+                    }}>
+                      {combo.solution}
+                    </div>
+                  </div>
+                )}
                 {combo.image ? (
                   <>
                     <img
@@ -634,7 +656,10 @@ const PublishedCombos = () => {
                 ) : (
                   <ComboPreview 
                     positions={combo.positions}
-                    settings={combo.settings || combo} // Support both formats for backward compatibility
+                    settings={{
+                      ...(combo.settings || combo), // Include all existing settings
+                      solution: combo.solution // Make sure solution is included
+                    }}
                   />
                 )}
               </div>
@@ -739,7 +764,10 @@ const PublishedCombos = () => {
                     <div style={{ padding: '20px' }}>
                       <ComboPreview 
                         positions={selectedCombo.positions}
-                        settings={selectedCombo.settings || selectedCombo}
+                        settings={{
+                          ...(selectedCombo.settings || selectedCombo), // Include all existing settings
+                          solution: selectedCombo.solution // Make sure solution is included
+                        }}
                       />
                     </div>
                   )}
@@ -767,6 +795,34 @@ const PublishedCombos = () => {
                     <div style={{ marginTop: '15px' }}>
                       <strong>Description:</strong>
                       <p style={{ margin: '5px 0 0 0', color: '#ddd' }}>{selectedCombo.description}</p>
+                    </div>
+                  )}
+                  {selectedCombo.solution && (
+                    <div style={{ 
+                      marginTop: '15px',
+                      padding: '12px',
+                      backgroundColor: 'rgba(255, 204, 0, 0.1)',
+                      borderRadius: '6px',
+                      borderLeft: '3px solid #ffcc00'
+                    }}>
+                      <div style={{ 
+                        fontWeight: 'bold', 
+                        marginBottom: '8px',
+                        color: '#ffcc00',
+                        fontSize: '0.95em',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        Combo Solution:
+                      </div>
+                      <div style={{
+                        fontStyle: 'italic',
+                        color: '#fff',
+                        lineHeight: '1.5',
+                        whiteSpace: 'pre-line'
+                      }}>
+                        {selectedCombo.solution}
+                      </div>
                     </div>
                   )}
                 </div>

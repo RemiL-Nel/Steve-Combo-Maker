@@ -4,11 +4,14 @@ import Lucina from './Lucina.jsx';
 import RandomizeButton from './RandomizeButton.jsx';
 import ShareButton from './ShareButton.jsx';
 import SaveComboButton from './SaveComboButton';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from './firebase';
 import html2canvas from 'html2canvas';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import styles from './Arena.module.css';
 
-const Arena = () => {
+const Arena = ({ sharedComboId }) => {
+  const [isLoading, setIsLoading] = useState(!!sharedComboId);
   const arenaImage = require('./assets/arena.jpg');
   const arenaRef = useRef(null);
   const previewAreaRef = useRef(null);
@@ -28,7 +31,50 @@ const Arena = () => {
     tool: 'None',         // 'Wood' | 'Stone' | 'Gold' | 'Iron' | 'Diamond' | 'None'
   });
   const [randomized, setRandomized] = useState(false);
+  const [error, setError] = useState('');
   const [shareableLink, setShareableLink] = useState('');
+
+  // Load shared combo data when component mounts or sharedComboId changes
+  useEffect(() => {
+    const loadSharedCombo = async () => {
+      if (!sharedComboId) return;
+      
+      try {
+        const comboRef = doc(db, 'combos', sharedComboId);
+        const comboDoc = await getDoc(comboRef);
+        
+        if (comboDoc.exists()) {
+          const comboData = comboDoc.data();
+          setSettings({
+            percentage: comboData.percentage || 0,
+            gold: comboData.gold || false,
+            startingMove: comboData.startingMove || 'Jab',
+            di: comboData.di || 'No DI',
+            sdi: comboData.sdi || 'No SDI',
+            sdiStrength: comboData.sdiStrength?.toString() || '0',
+            tool: comboData.tool || 'None',
+          });
+          
+          if (comboData.positions) {
+            setPositions({
+              steveX: comboData.positions.steveX || 30,
+              lucinaX: comboData.positions.lucinaX || 70,
+              bottomOffset: comboData.positions.bottomOffset || 0,
+            });
+          }
+        } else {
+          setError('Combo not found');
+        }
+      } catch (err) {
+        console.error('Error loading shared combo:', err);
+        setError('Failed to load combo');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSharedCombo();
+  }, [sharedComboId]);
   
   // Memoize combo data to prevent unnecessary re-renders
   const comboData = useMemo(() => ({

@@ -62,8 +62,9 @@ export const publishCombo = async (comboId, userId) => {
       throw new Error('You do not have permission to publish this combo');
     }
 
-    // Update the combo to be published
+    // Update the combo to be published, preserving all existing data
     await setDoc(comboRef, { 
+      ...comboData, // Include all existing combo data
       isPublished: true, 
       publishedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -187,7 +188,8 @@ export const saveCombo = async (comboData) => {
       di = 'No DI',
       sdi = 'No SDI',
       sdiStrength = '0',
-      image = null  // Expecting base64 string
+      image = null,  // Expecting base64 string
+      solution = ''  // Combo solution/description
     } = comboData;
     const name = comboData.name?.trim() || 'Unnamed Combo';
     const description = comboData.description?.trim() || '';
@@ -232,6 +234,7 @@ export const saveCombo = async (comboData) => {
       sdi,
       sdiStrength,
       positions,
+      solution,
       difficulty,
       
       // User info

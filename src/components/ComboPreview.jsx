@@ -71,6 +71,40 @@ const ComboPreview = forwardRef(({ positions, settings }) => {
         <div style={styles.infoItem}>
           <strong>{settings?.gold ? 'Gold' : 'No Gold'}:</strong> {settings?.gold ? '✅' : '❌'}
         </div>
+        {settings?.solution && (
+          <div style={{
+            ...styles.infoItem, 
+            marginTop: '10px', 
+            paddingTop: '10px', 
+            borderTop: '1px solid #444',
+            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            borderRadius: '4px',
+            padding: '10px',
+            margin: '10px -5px 0 -5px'
+          }}>
+            <div style={{
+              fontWeight: 'bold', 
+              marginBottom: '5px',
+              color: '#ffcc00',
+              fontSize: '0.9em',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Combo Solution:
+            </div>
+            <div style={{
+              fontStyle: 'italic',
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              padding: '8px',
+              borderRadius: '4px',
+              borderLeft: '3px solid #ffcc00',
+              fontSize: '0.9em',
+              lineHeight: '1.4'
+            }}>
+              {settings.solution}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
