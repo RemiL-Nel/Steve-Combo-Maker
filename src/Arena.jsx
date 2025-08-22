@@ -1,14 +1,56 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import Steve from './Steve.jsx';
-import Lucina from './Lucina.jsx';
+import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+
+// Third-party imports
+import { getDoc, doc } from 'firebase/firestore';
+import html2canvas from 'html2canvas';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Switch, Box, IconButton } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import CloseIcon from '@mui/icons-material/Close';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import EditIcon from '@mui/icons-material/Edit';
+
+// Local imports
 import RandomizeButton from './RandomizeButton.jsx';
 import ShareButton from './ShareButton.jsx';
 import SaveComboButton from './SaveComboButton';
-import { getDoc, doc } from 'firebase/firestore';
 import { db } from './firebase';
-import html2canvas from 'html2canvas';
-import TwitterIcon from '@mui/icons-material/Twitter';
 import styles from './Arena.module.css';
+import images from './utils/importImages';
+
+// Lazy load heavy components
+const Steve = lazy(() => import('./Steve.jsx'));
+const Lucina = lazy(() => import('./Lucina.jsx'));
+
+// Memoize the character list to prevent recreation on each render
+const CharacterList = React.memo(({ images, currentImage, onChange }) => {
+  return (
+    <Select
+      name="character"
+      value={currentImage || ''}
+      onChange={onChange}
+      label="Character"
+      MenuProps={{
+        PaperProps: {
+          style: {
+            maxHeight: 300, // Limit dropdown height
+          },
+        },
+      }}
+    >
+      {images.map((img, index) => {
+        const fileName = img.split('/').pop();
+        const baseName = fileName.split('.')[0];
+        const formattedName = baseName.charAt(0).toUpperCase() + baseName.slice(1).toLowerCase();
+        return (
+          <MenuItem key={index} value={img}>
+            {formattedName}
+          </MenuItem>
+        );
+      })}
+    </Select>
+  );
+});
 
 const Arena = ({ sharedComboId }) => {
   const [isLoading, setIsLoading] = useState(!!sharedComboId);
@@ -16,6 +58,7 @@ const Arena = ({ sharedComboId }) => {
   const arenaRef = useRef(null);
   const previewAreaRef = useRef(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [randomizeCharacter, setRandomizeCharacter] = useState(true); // checkbox activée par défaut
   const [positions, setPositions] = useState({
     steveX: 30,
     lucinaX: 70,
@@ -33,6 +76,101 @@ const Arena = ({ sharedComboId }) => {
   const [randomized, setRandomized] = useState(false);
   const [error, setError] = useState('');
   const [shareableLink, setShareableLink] = useState('');
+  const [currentImage, setCurrentImage] = useState(images[0]);
+  // Memoize the character list to prevent recreation
+  const characterList = useMemo(() => ({
+    images,
+    currentImage,
+    onChange: (e) => {
+      setCurrentImage(e.target.value);
+      setEditSettings(prev => ({
+        ...prev,
+        character: e.target.value
+      }));
+    }
+  }), [currentImage]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editSettings, setEditSettings] = useState({});
+  const [isSettingsMinimized, setIsSettingsMinimized] = useState(false);
+  
+  // Toggle settings panel visibility
+  const toggleSettingsMinimize = useCallback(() => {
+    setIsSettingsMinimized(prev => !prev);
+  }, []);
+
+  // Open edit modal with current settings
+  const handleOpenEditModal = () => {
+    setEditSettings({
+      ...settings,
+      character: currentImage
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // Close edit modal without saving
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  // Save changes from edit modal
+  const handleSaveEdit = () => {
+    setSettings(prev => ({
+      ...prev,
+      percentage: Number(editSettings.percentage) || 0,
+      gold: editSettings.gold || false,
+      startingMove: editSettings.startingMove || 'Jab',
+      di: editSettings.di || 'No DI',
+      sdi: editSettings.sdi || 'No SDI',
+      sdiStrength: String(editSettings.sdiStrength || '0'),
+      tool: editSettings.tool || 'None'
+    }));
+    
+    if (editSettings.character) {
+      setCurrentImage(editSettings.character);
+    }
+    
+    // Randomize character positions using the same logic as randomizeAll
+    const centerX = 20 + Math.random() * 60; // 20-80
+    const separation = 3 + Math.random() * 5; // 3-8
+    let nextSteveX = centerX - separation / 2;
+    let nextLucinaX = centerX + separation / 2;
+    
+    // Clamp into safe bounds so they stay on stage
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    nextSteveX = clamp(nextSteveX, 20, 80);
+    nextLucinaX = clamp(nextLucinaX, 20, 80);
+    
+    // 50% chance to flip sides
+    const flip = Math.random() < 0.5;
+    const steveXFinal = flip ? nextLucinaX : nextSteveX;
+    const lucinaXFinal = flip ? nextSteveX : nextLucinaX;
+    
+    setPositions({
+      steveX: steveXFinal,
+      lucinaX: lucinaXFinal,
+      bottomOffset: arenaRef.current?.clientHeight * 0.5 || 0
+    });
+    
+    setIsEditModalOpen(false);
+    setRandomized(true);
+  };
+
+  // Handle input changes in the edit form
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditSettings(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const getRandomImage = () => {
+    const randomIndex = Math.floor(Math.random() * images.length);
+    setCurrentImage(images[randomIndex]);
+  };
+
+
+  
 
   // Load shared combo data when component mounts or sharedComboId changes
   useEffect(() => {
@@ -62,6 +200,11 @@ const Arena = ({ sharedComboId }) => {
               bottomOffset: comboData.positions.bottomOffset || 0,
             });
           }
+          
+          // Load saved character if available
+          if (comboData.character) {
+            setCurrentImage(comboData.character);
+          }
         } else {
           setError('Combo not found');
         }
@@ -86,6 +229,7 @@ const Arena = ({ sharedComboId }) => {
     sdiStrength: settings.sdiStrength,
     positions,
     difficulty: 5,
+    character: currentImage, // Include the current character image
   }), [
     settings.percentage, 
     settings.gold, 
@@ -93,7 +237,8 @@ const Arena = ({ sharedComboId }) => {
     settings.di, 
     settings.sdi, 
     settings.sdiStrength,
-    positions
+    positions,
+    currentImage // Add to dependencies
   ]);
 
   // Memoize save handler
@@ -385,6 +530,9 @@ const Arena = ({ sharedComboId }) => {
     });
     
     // Set randomized to true to show the save and share buttons
+    if (randomizeCharacter) {
+      getRandomImage();
+    }
     setRandomized(true);
   };
 
@@ -437,7 +585,7 @@ const Arena = ({ sharedComboId }) => {
               height: 'auto',
               display: 'block',
               position: 'relative',
-              zIndex: 0,
+              zIndex: 1,
             }}
           />
         </div>
@@ -453,7 +601,7 @@ const Arena = ({ sharedComboId }) => {
               left: `${positions.steveX}%`,
               transform: 'translateX(-50%)',
               transition: 'left 0.2s ease-in-out',
-              zIndex: 2,
+              zIndex: 3,
             }}
           >
             <Steve />
@@ -473,7 +621,7 @@ const Arena = ({ sharedComboId }) => {
             zIndex: 2,
           }}
         >
-          <Lucina />
+          <Lucina image={currentImage} />
         </div>
       </div>
 
@@ -537,39 +685,98 @@ const Arena = ({ sharedComboId }) => {
       
       {/* Display current settings */}
       <div className={styles.settingsPanel}>
-        <div className={styles.settingsGrid}>
-          <div className={styles.column}>
-            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Percents: <strong>{settings.percentage}%</strong></p>
-            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Gold: <strong>{settings.gold ? 'Yes' : 'No'}</strong></p>
-            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>DI: <strong>{settings.di}</strong></p>
-          </div>
-          <div className={styles.column}>
-            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>SDI: <strong>{settings.sdi}</strong></p>
-            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>SDI Strength: <strong>{settings.sdiStrength}</strong></p>
-            <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Tool: <strong>{settings.tool}</strong></p>
+        {/* Header with title and buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '10px' }}>
+          <h3 style={{ margin: 0, color: '#fff' }}>Parameters</h3>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <IconButton 
+              onClick={handleOpenEditModal}
+              size="small"
+              sx={{ color: '#fff' }}
+              aria-label="edit parameters"
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton 
+              onClick={toggleSettingsMinimize}
+              size="small"
+              sx={{ color: '#fff' }}
+              aria-label={isSettingsMinimized ? 'Show settings' : 'Hide settings'}
+            >
+              {isSettingsMinimized ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </IconButton>
           </div>
         </div>
-        <p style={{ 
-          fontSize: 'clamp(1rem, 5vw, 1.4rem)', 
-          margin: '10px 0 5px',
-          color: '#4CAF50',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          width: '100%'
-        }}>
-          Starting Move:
-        </p>
-        <p style={{ 
-          fontSize: 'clamp(1.2rem, 6vw, 1.8rem)',
-          margin: '5px 0',
-          color: '#FFD700',
-          fontWeight: 'bold',
-          textShadow: '0 0 5px rgba(0,0,0,0.5)',
-          textAlign: 'center',
-          width: '100%'
-        }}>
-          {settings.startingMove}
-        </p>
+        
+        {/* Parameters section - collapsible */}
+        {!isSettingsMinimized && (
+          <>
+            <div className={styles.settingsGrid}>
+              <div className={styles.column}>
+                <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Percents: <strong>{settings.percentage}%</strong></p>
+                <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Gold: <strong>{settings.gold ? 'Yes' : 'No'}</strong></p>
+                <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>DI: <strong>{settings.di}</strong></p>
+              </div>
+              <div className={styles.column}>
+                <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>SDI: <strong>{settings.sdi}</strong></p>
+                <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>SDI Strength: <strong>{settings.sdiStrength}</strong></p>
+                <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)' }}>Tool: <strong>{settings.tool}</strong></p>
+              </div>
+            </div>
+            
+            {/* Starting Move section */}
+            <p style={{ 
+              fontSize: 'clamp(1rem, 5vw, 1.4rem)', 
+              margin: '10px 0 5px',
+              color: '#4CAF50',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              width: '100%'
+            }}>
+              Starting Move:
+            </p>
+            <p style={{ 
+              fontSize: 'clamp(1.2rem, 6vw, 1.8rem)',
+              margin: '5px 0',
+              color: '#FFD700',
+              fontWeight: 'bold',
+              textShadow: '0 0 5px rgba(0,0,0,0.5)',
+              textAlign: 'center',
+              width: '100%'
+            }}>
+              {settings.startingMove}
+            </p>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              width: '80%',
+              maxWidth: '300px',
+              margin: '10px auto',
+              padding: '8px 16px',
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              borderRadius: '6px'
+            }}>
+              <span style={{ 
+                color: '#fff', 
+                fontSize: '1.1rem',
+                fontWeight: '500'
+              }}>
+                Randomize character ?
+              </span>
+              <input 
+                type='checkbox' 
+                checked={randomizeCharacter} 
+                onChange={(e) => setRandomizeCharacter(!randomizeCharacter)}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+          </>
+        )}
       </div>
       
       {/* Footer */}
@@ -638,6 +845,174 @@ const Arena = ({ sharedComboId }) => {
           <TwitterIcon style={{ fontSize: '1rem', marginLeft: '3px' }} />
         </a>
       </footer>
+
+      {/* Edit Parameters Modal */}
+      <Dialog 
+        open={isEditModalOpen} 
+        onClose={handleCloseEditModal} 
+        fullScreen={window.innerWidth < 900}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          pr: 1,
+        }}>
+          Edit Parameters
+          <IconButton 
+            onClick={handleCloseEditModal}
+            size="small"
+            aria-label="Close"
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              label="Percentage"
+              type="number"
+              name="percentage"
+              value={editSettings.percentage || ''}
+              onChange={(e) => {
+                // Only allow numbers and empty string
+                const value = e.target.value;
+                if (value === '' || /^\d+$/.test(value)) {
+                  const numValue = value === '' ? '' : parseInt(value, 10);
+                  setEditSettings(prev => ({
+                    ...prev,
+                    percentage: numValue
+                  }));
+                }
+              }}
+              fullWidth
+              margin="normal"
+              variant="outlined"
+              inputProps={{ 
+                min: 0, 
+                max: 999,
+                inputMode: 'numeric',
+                pattern: '[0-9]*'
+              }}
+              onKeyPress={(e) => {
+                // Prevent non-numeric characters
+                if (!/[0-9]/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+            />
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={editSettings.gold || false}
+                  onChange={handleInputChange}
+                  name="gold"
+                  color="primary"
+                />
+              }
+              label="Gold"
+            />
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Starting Move</InputLabel>
+              <Select
+                name="startingMove"
+                value={editSettings.startingMove || 'Jab'}
+                onChange={handleInputChange}
+                label="Starting Move"
+              >
+                {startingMoves.map((move) => (
+                  <MenuItem key={move} value={move}>
+                    {move}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>DI</InputLabel>
+              <Select
+                name="di"
+                value={editSettings.di || 'No DI'}
+                onChange={handleInputChange}
+                label="DI"
+              >
+                <MenuItem value="No DI">No DI</MenuItem>
+                <MenuItem value="In">In</MenuItem>
+                <MenuItem value="Out">Out</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>SDI</InputLabel>
+              <Select
+                name="sdi"
+                value={editSettings.sdi || 'No SDI'}
+                onChange={handleInputChange}
+                label="SDI"
+              >
+                <MenuItem value="No SDI">No SDI</MenuItem>
+                <MenuItem value="In">In</MenuItem>
+                <MenuItem value="Out">Out</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>SDI Strength</InputLabel>
+              <Select
+                name="sdiStrength"
+                value={String(editSettings.sdiStrength || '0')}
+                onChange={handleInputChange}
+                label="SDI Strength"
+              >
+                <MenuItem value="0">0</MenuItem>
+                <MenuItem value="1">1</MenuItem>
+                <MenuItem value="2">2</MenuItem>
+                <MenuItem value="3">3</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Tool</InputLabel>
+              <Select
+                name="tool"
+                value={editSettings.tool || 'None'}
+                onChange={handleInputChange}
+                label="Tool"
+              >
+                <MenuItem value="None">None</MenuItem>
+                <MenuItem value="Wood">Wood</MenuItem>
+                <MenuItem value="Stone">Stone</MenuItem>
+                <MenuItem value="Gold">Gold</MenuItem>
+                <MenuItem value="Iron">Iron</MenuItem>
+                <MenuItem value="Diamond">Diamond</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Character</InputLabel>
+              <Suspense fallback={<div>Loading...</div>}>
+                <CharacterList 
+                  images={characterList.images}
+                  currentImage={editSettings.character}
+                  onChange={handleInputChange}
+                />
+              </Suspense>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditModal} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleSaveEdit} color="primary" variant="contained">
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

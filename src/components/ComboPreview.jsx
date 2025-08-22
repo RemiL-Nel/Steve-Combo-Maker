@@ -53,9 +53,10 @@ const ComboPreview = forwardRef(({ positions, settings }) => {
           zIndex: 15
         }}>
           <Lucina 
-            width="70px"
+            width="100%"
             height="auto"
-            isHit={true}
+            style={{ transform: 'scaleX(-1)' }} // Face right
+            image={settings?.character} // Use saved character image if available
           />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserCombos, deleteCombo, shareCombo, publishCombo, updateUserDisplayName } from '../firebase';
 import { 
@@ -21,7 +21,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  Tooltip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { format } from 'date-fns';
@@ -35,6 +36,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingName, setUpdatingName] = useState(false);
+  const [deleting, setDeleting] = useState({});
+  const fileInputRef = useRef(null);
   // Snackbar state
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
@@ -87,11 +90,16 @@ const Profile = () => {
   }, [currentUser]);
 
   const formatDate = (timestamp) => {
-    if (!timestamp?.toDate) return 'N/A';
-    return format(timestamp.toDate(), 'MMM d, yyyy h:mm a');
+    if (!timestamp) return 'Unknown date';
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return format(date, 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
   };
 
-  const [deleting, setDeleting] = useState({});
   const [publishing, setPublishing] = useState({});
   const [shareLink, setShareLink] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -169,19 +177,21 @@ const Profile = () => {
     <Container maxWidth="lg" sx={{ mt: 4 }}>
       <Box sx={{ mt: 4, mb: 6 }}>
         <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Avatar 
-            src={currentUser?.photoURL} 
-            alt={currentUser?.displayName || currentUser?.email}
-            sx={{ 
-              width: 120, 
-              height: 120, 
-              margin: '0 auto 20px',
-              fontSize: '3rem',
-              boxShadow: 3
-            }}
-          >
-            {currentUser?.email?.charAt(0).toUpperCase()}
-          </Avatar>
+          <Box sx={{ mb: 3 }}>
+            <Avatar 
+              src={currentUser?.photoURL} 
+              alt={currentUser?.displayName || currentUser?.email}
+              sx={{ 
+                width: 120, 
+                height: 120, 
+                fontSize: '3rem',
+                boxShadow: 3,
+                margin: '0 auto',
+              }}
+            >
+              {currentUser?.email?.charAt(0).toUpperCase()}
+            </Avatar>
+          </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
             <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 0 }}>
@@ -273,18 +283,31 @@ const Profile = () => {
                     transition: 'transform 0.2s, box-shadow 0.2s',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: 3
-                    }
+                      boxShadow: 3,
+                      cursor: 'pointer',
+                      textDecoration: 'none'
+                    },
+                    textDecoration: 'none',
+                    color: 'inherit'
                   }}
                 >
                   <CardHeader
-                    title={combo.name || 'Unnamed Combo'}
+                    title={
+                      <>
+                        <div>{combo.name || 'Unnamed Combo'}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '4px' }}>
+                          Difficulty: {combo.difficulty || 'Not rated'}
+                        </div>
+                      </>
+                    }
                     subheader={`Created ${formatDate(combo.createdAt)}`}
                     titleTypographyProps={{
                       variant: 'h6',
                       noWrap: true,
-                      title: combo.name
+                      title: combo.name,
+                      sx: { color: 'white' }
                     }}
+                    sx={{ '& .MuiCardHeader-title': { color: 'white' } }}
                     subheaderTypographyProps={{
                       variant: 'caption',
                       color: 'text.secondary'
@@ -300,7 +323,6 @@ const Profile = () => {
                       </Box>
                     }
                   />
-                  {/* Preview - same logic as PublishedCombos */}
                   <Box sx={{ mt: 1, mb: 1, borderRadius: 1, overflow: 'hidden' }}>
                     {combo.image ? (
                       <>
@@ -349,11 +371,77 @@ const Profile = () => {
                           di: combo.di || 'No DI',
                           sdi: combo.sdi || 'No SDI',
                           sdiStrength: combo.sdiStrength || '0',
+                          character: combo.character, // Pass the saved character image
                         }}
                       />
                     )}
                   </Box>
-                  {/* Removed bottom description and tags under preview as requested */}
+                  
+                  {(combo.solution || combo.settings?.solution) && (
+                    <Box sx={{
+                      p: 2,
+                      background: 'linear-gradient(135deg, #424242 0%, #616161 100%)',
+                      borderRadius: '8px',
+                      mt: 1.5,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      border: '1px solid #757575',
+                      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.2)'
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '3px',
+                        background: 'linear-gradient(90deg, #9e9e9e, #e0e0e0)',
+                        animation: 'rainbow 3s linear infinite',
+                        '@keyframes rainbow': {
+                          '0%': { backgroundPosition: '0% 50%' },
+                          '100%': { backgroundPosition: '100% 50%' }
+                        }
+                      }
+                    }}>
+                      <Typography variant="subtitle2" sx={{
+                        color: 'white',
+                        fontWeight: 'bold',
+                        mb: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        '&::before': {
+                          content: '"💡"',
+                          mr: 1,
+                          fontSize: '1.2em'
+                        }
+                      }}>
+                        Solution :
+                      </Typography>
+                      <Typography variant="body2" sx={{
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        lineHeight: 1.6,
+                        position: 'relative',
+                        pl: 2,
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          left: 0,
+                          top: '0.3em',
+                          height: '60%',
+                          width: '3px',
+                          background: 'linear-gradient(to bottom, #bdbdbd, #e0e0e0)',
+                          borderRadius: '3px'
+                        }
+                      }}>
+                        {combo.solution || combo.settings?.solution}
+                      </Typography>
+                    </Box>
+                  )}
+                  
                   <CardActions sx={{ justifyContent: !combo.isPublished ? 'space-between' : 'flex-end', pt: 0, gap: 1 }}>
                     {!combo.isPublished && (
                       <Button 
@@ -367,6 +455,22 @@ const Profile = () => {
                       </Button>
                     )}
                     <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={() => window.location.href = `/combo/${combo.id}`}
+                        sx={{
+                          '&:hover': { backgroundColor: 'primary.dark' },
+                          transition: 'all 0.2s',
+                          textTransform: 'none',
+                          px: 1.5,
+                          fontSize: '0.75rem',
+                          minWidth: 'auto'
+                        }}
+                      >
+                        Retry
+                      </Button>
                       <IconButton 
                         aria-label="share" 
                         color="primary"

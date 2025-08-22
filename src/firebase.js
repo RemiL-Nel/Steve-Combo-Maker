@@ -30,6 +30,7 @@ import {
   sendPasswordResetEmail
 } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Your web app's Firebase configuration
 // Using environment variables for security
@@ -114,6 +115,7 @@ const analytics = getAnalytics(app);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const functions = getFunctions(app);
+const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Auth functions
@@ -142,12 +144,47 @@ export const getCurrentUser = () => {
 };
 
 // Update current user's display name
-export const updateUserDisplayName = async (displayName) => {
+export const updateUserProfile = async (updates) => {
   const user = auth.currentUser;
-  if (!user) throw new Error('No authenticated user');
-  if (!displayName || !displayName.trim()) throw new Error('Display name cannot be empty');
-  await updateProfile(user, { displayName: displayName.trim() });
-  return auth.currentUser;
+  if (!user) return false;
+  
+  try {
+    await updateProfile(user, updates);
+    return true;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
+};
+
+export const updateUserDisplayName = async (displayName) => {
+  return updateUserProfile({ displayName });
+};
+
+export const updateUserPhotoURL = async (file) => {
+  if (!file) throw new Error('No file provided');
+  
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  
+  try {
+    // Create a reference to the user's profile picture
+    const storageRef = ref(storage, `profilePictures/${user.uid}/${file.name}`);
+    
+    // Upload the file
+    const snapshot = await uploadBytes(storageRef, file);
+    
+    // Get the download URL
+    const photoURL = await getDownloadURL(snapshot.ref);
+    
+    // Update the user's profile
+    await updateUserProfile({ photoURL });
+    
+    return photoURL;
+  } catch (error) {
+    console.error('Error updating profile picture:', error);
+    throw error;
+  }
 };
 
 // Function to send password reset email
@@ -189,7 +226,8 @@ export const saveCombo = async (comboData) => {
       sdi = 'No SDI',
       sdiStrength = '0',
       image = null,  // Expecting base64 string
-      solution = ''  // Combo solution/description
+      solution = '', // Combo solution/description
+      character = null // Character image data
     } = comboData;
     const name = comboData.name?.trim() || 'Unnamed Combo';
     const description = comboData.description?.trim() || '';
@@ -236,6 +274,7 @@ export const saveCombo = async (comboData) => {
       positions,
       solution,
       difficulty,
+      character: character || null, // Ensure character is included, default to null
       
       // User info
       userId: user.uid,

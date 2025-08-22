@@ -17,7 +17,7 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
   const nameInputRef = useRef(null);
   const solutionInputRef = useRef(null);
 
-  const handleSave = async () => {
+  const handleSave = async (publish = false) => {
     if (!currentUser) {
       setShowLoginMessage(true);
       setTimeout(() => setShowLoginMessage(false), 2000);
@@ -50,7 +50,7 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
         name: name.trim(),
         solution: solution.trim(),
         difficulty: Number(difficulty) || 5,
-        isPublished: false,
+        isPublished: publish,
         publishedAt: null,
         ...(imageDataUrl ? { image: imageDataUrl } : {}),
       };
@@ -310,7 +310,23 @@ const SaveComboButton = ({ comboData, onSave, getPreview, children }) => {
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
-                  onClick={handleSave}
+                  onClick={() => handleSave(true)}
+                  disabled={isSaving || !name.trim()}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#42a5f5',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    opacity: (isSaving || !name.trim()) ? 0.7 : 1,
+                    minWidth: '120px',
+                  }}
+                >
+                  {isSaving ? 'Saving...' : 'Save Publicly'}
+                </button>
+                <button
+                  onClick={() => handleSave(false)}
                   disabled={isSaving || !name.trim()}
                   style={{
                     padding: '8px 16px',

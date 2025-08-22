@@ -13,7 +13,8 @@ const Steve = () => {
           width: '100%', 
           height: 'auto',
           maxWidth: '100%',
-          objectFit: 'contain'
+          objectFit: 'contain',
+          zIndex: 3,
         }} 
       />
     </div>
