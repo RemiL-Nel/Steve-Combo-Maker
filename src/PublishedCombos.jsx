@@ -156,6 +156,7 @@ const PublishedCombos = () => {
             id: doc.id,
             name: data.name || 'Unnamed Combo',
             description: data.description || '',
+            tool: data.tool || 'None',
             userName: data.userName || 'Anonymous',
             image: data.image || '',
             likesCount: typeof data.likesCount === 'number' ? data.likesCount : 0,
@@ -173,6 +174,7 @@ const PublishedCombos = () => {
               startingMove: data.startingMove || 'Jab',
               percentage: data.percentage || 0,
               gold: data.gold || false,
+              tool: data.tool || 'None',
               di: data.di || 'No DI',
               sdi: data.sdi || 'No SDI',
               sdiStrength: data.sdiStrength || '0',
@@ -404,6 +406,72 @@ const PublishedCombos = () => {
     }
   };
   
+  // Helper function to extract YouTube video ID from URL
+  const extractYoutubeId = (url) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  // Helper function to check if text contains a YouTube URL
+  const containsYoutubeUrl = (text) => {
+    return text && text.includes('youtube.com') || text.includes('youtu.be');
+  };
+
+  // Helper function to render solution with YouTube video if URL is present
+  const renderSolution = (solution) => {
+    if (!solution) return null;
+    
+    const youtubeId = extractYoutubeId(solution);
+    const textWithoutUrl = solution.replace(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g, '').trim();
+    
+    return (
+      <>
+        {youtubeId && (
+          <div style={{ margin: '15px 0' }}>
+            <div style={{ 
+              position: 'relative', 
+              paddingBottom: '56.25%', /* 16:9 Aspect Ratio */
+              height: 0, 
+              overflow: 'hidden',
+              maxWidth: '100%',
+              backgroundColor: '#000',
+              borderRadius: '8px',
+              marginBottom: '15px'
+            }}>
+              <iframe
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 0
+                }}
+                src={`https://www.youtube.com/embed/${youtubeId}`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen>
+              </iframe>
+            </div>
+          </div>
+        )}
+        {textWithoutUrl && (
+          <div style={{
+            fontStyle: 'italic',
+            color: '#ccc',
+            lineHeight: '1.5',
+            whiteSpace: 'pre-line',
+            wordBreak: 'break-word'
+          }}>
+            {textWithoutUrl}
+          </div>
+        )}
+      </>
+    );
+  };
+
   // Helper function to calculate new average rating
   const calculateNewAverage = (currentAverage, currentCount, newRating, isUpdate) => {
     if (!currentAverage) return newRating;
@@ -612,9 +680,12 @@ const PublishedCombos = () => {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       fontStyle: 'italic',
-                      fontSize: '0.9em'
+                      fontSize: '0.9em',
+                      maxWidth: '100%',
+                      display: 'inline-block',
+                      verticalAlign: 'middle'
                     }}>
-                      {combo.solution}
+                      {combo.solution.length > 50 ? `${combo.solution.substring(0, 47)}...` : combo.solution}
                     </div>
                   </div>
                 )}
@@ -647,6 +718,7 @@ const PublishedCombos = () => {
                           <>
                             <div><strong>Starting Move:</strong> {s?.startingMove || 'Jab'}</div>
                             <div><strong>Percentage:</strong> {percentage}%</div>
+                            <div><strong>Tool:</strong> {s?.tool || 'None'}</div>
                             <div><strong>{gold ? 'Gold' : 'No Gold'}:</strong> {gold ? '✅' : '❌'}</div>
                           </>
                         );
@@ -658,7 +730,8 @@ const PublishedCombos = () => {
                     positions={combo.positions}
                     settings={{
                       ...(combo.settings || combo), // Include all existing settings
-                      solution: combo.solution // Make sure solution is included
+                      solution: combo.solution, // Make sure solution is included
+                      tool: (combo.settings || combo).tool // Include tool parameter
                     }}
                   />
                 )}
@@ -815,14 +888,7 @@ const PublishedCombos = () => {
                       }}>
                         Combo Solution:
                       </div>
-                      <div style={{
-                        fontStyle: 'italic',
-                        color: '#fff',
-                        lineHeight: '1.5',
-                        whiteSpace: 'pre-line'
-                      }}>
-                        {selectedCombo.solution}
-                      </div>
+                      {renderSolution(selectedCombo.solution)}
                     </div>
                   )}
                 </div>

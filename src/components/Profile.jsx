@@ -305,7 +305,14 @@ const Profile = () => {
                       variant: 'h6',
                       noWrap: true,
                       title: combo.name,
-                      sx: { color: 'white' }
+                      sx: { 
+                        color: 'white',
+                        maxWidth: '200px',
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        display: 'block'
+                      }
                     }}
                     sx={{ '& .MuiCardHeader-title': { color: 'white' } }}
                     subheaderTypographyProps={{
@@ -350,12 +357,14 @@ const Profile = () => {
                               startingMove: combo.startingMove || 'Jab',
                               percentage: typeof combo.percentage === 'number' ? combo.percentage : 0,
                               gold: !!combo.gold,
+                              tool: combo.tool || 'None'
                             };
                             return (
                               <>
                                 <div><strong>Starting Move:</strong> {s.startingMove}</div>
                                 <div><strong>Percentage:</strong> {s.percentage}%</div>
                                 <div><strong>{s.gold ? 'Gold' : 'No Gold'}:</strong> {s.gold ? '✅' : '❌'}</div>
+                                <div><strong>Tool:</strong> {s?.tool || 'None'}</div>
                               </>
                             );
                           })()}
@@ -437,7 +446,35 @@ const Profile = () => {
                           borderRadius: '3px'
                         }
                       }}>
-                        {combo.solution || combo.settings?.solution}
+                        {(combo.solution || combo.settings?.solution)?.length > 40 
+                          ? `${(combo.solution || combo.settings?.solution).substring(0, 37)}` 
+                          : (combo.solution || combo.settings?.solution)}
+                        {(combo.solution || combo.settings?.solution)?.length > 40 && (
+                          <Typography 
+                            component="span" 
+                            sx={{ 
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              fontSize: '0.8em',
+                              ml: 0.5,
+                              cursor: 'pointer',
+                              '&:hover': {
+                                textDecoration: 'underline',
+                                color: 'white'
+                              }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const fullText = combo.solution || combo.settings?.solution;
+                              if (e.target.textContent === '...') {
+                                e.target.textContent = fullText;
+                              } else {
+                                e.target.textContent = fullText.length > 40 ? `${fullText.substring(0, 37)}...` : fullText;
+                              }
+                            }}
+                          >
+                            ...
+                          </Typography>
+                        )}
                       </Typography>
                     </Box>
                   )}

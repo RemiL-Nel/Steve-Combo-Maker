@@ -220,7 +220,8 @@ export const saveCombo = async (comboData) => {
     const { 
       percentage = 0, 
       gold = false, 
-      startingMove = 'Jab', 
+      startingMove = 'Jab',
+      tool = 'None',
       positions = {},
       di = 'No DI',
       sdi = 'No SDI',
@@ -268,6 +269,7 @@ export const saveCombo = async (comboData) => {
       percentage,
       gold,
       startingMove,
+      tool: tool || 'None',  // Ensure tool is always included with a default value
       di,
       sdi,
       sdiStrength,
@@ -293,7 +295,8 @@ export const saveCombo = async (comboData) => {
       tags: [
         `percent-${Math.floor(percentage/10)*10}`, // e.g., 'percent-0', 'percent-10', etc.
         gold ? 'gold' : 'no-gold',
-        `move-${String(startingMove).toLowerCase().replace(/\s+/g, '-')}` // e.g., 'move-jab', 'move-up-tilt'
+        `move-${String(startingMove).toLowerCase().replace(/\s+/g, '-')}`, // e.g., 'move-jab', 'move-up-tilt'
+        `tool-${String(tool).toLowerCase().replace(/\s+/g, '-')}` // e.g., 'tool-pickaxe', 'tool-sword'
       ]
     };
 

@@ -224,6 +224,7 @@ const Arena = ({ sharedComboId }) => {
     percentage: settings.percentage,
     gold: settings.gold,
     startingMove: settings.startingMove,
+    tool: settings.tool,
     di: settings.di,
     sdi: settings.sdi,
     sdiStrength: settings.sdiStrength,

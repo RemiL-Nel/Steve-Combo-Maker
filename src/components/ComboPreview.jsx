@@ -72,6 +72,11 @@ const ComboPreview = forwardRef(({ positions, settings }) => {
         <div style={styles.infoItem}>
           <strong>{settings?.gold ? 'Gold' : 'No Gold'}:</strong> {settings?.gold ? '✅' : '❌'}
         </div>
+        {settings?.tool && settings.tool !== 'None' && (
+          <div style={styles.infoItem}>
+            <strong>Tool:</strong> {settings.tool}
+          </div>
+        )}
         {settings?.solution && (
           <div style={{
             ...styles.infoItem, 
